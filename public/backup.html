@@ -1,0 +1,85 @@
+import './App.css';
+import TopButtons from './components/TopButtons';
+import Inputs, { handleLocation } from './components/Inputs';
+import TLCBar from './components/TLCBar';
+import TemperatureDetails from './components/TemperatureDetails';
+import Forecast from './components/Forecast';
+import getFormattedData from './Functions/WeatherFunc';
+import { useEffect, useState } from 'react';
+import backgroundImage from './Functions/BackgroundImage';
+
+function App() {
+
+  const [query, setQuery] = useState({q: "kolkata"});
+  const [weather, setWeather] = useState(null);
+  const [units, setUnits] = useState("metric");
+  const [bgImg, setBgImg] = useState();
+  
+  useEffect(() => {
+
+    const weatherData = async () => {
+
+      // Checking if weather data for the current query and unit exists in session storage
+      const cachedData = sessionStorage.getItem(`${query.q}_${units}`);
+
+      if (cachedData) {
+        console.log('Data is fetched from session');
+        setWeather(JSON.parse(cachedData));
+      }
+
+        else {
+
+          const data = await getFormattedData({ ...query, units });
+    
+          // Cache the weather data in session storage, based on query and the respective unit
+          sessionStorage.setItem(`${query.q}_${units}`, JSON.stringify(data));
+    
+          // console.log(data);
+          // console.log(query);
+          setWeather(data);
+
+        }
+
+        const check = await backgroundImage('cat');
+        console.log(check);
+    }
+  
+    weatherData();
+
+  }, [query, units]);
+
+  return (
+
+    <div className="background mx-auto py-4 bg-gradient-to-br from-violet-500 to-fuchsia-500 
+    shadow-xl shadow-gray-400 h-fit">
+
+      <TopButtons setQuery={setQuery}/>
+
+      <Inputs setQuery={setQuery} 
+      units={units}
+      setUnits={setUnits}/>
+      
+      {/* Implementing conditional rendering here*/}
+
+      {weather && (
+        <div>
+
+      <TLCBar weather={weather}/>
+      <TemperatureDetails weather={weather}/>
+
+      <Forecast title="Hourly Forecast" items={weather.hourlyData}/>
+
+        </div>
+      )}
+      
+      { !weather && (
+        <div className="flex font-light text-5xl text-white mb-10 items-center justify-center h-screen">
+          No data found!
+        </div>
+      )}
+
+    </div>
+  );   
+}
+
+export default App;
